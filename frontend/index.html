@@ -1,0 +1,395 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description"
+        content="Bee Keeps — A premium, real-time collaborative note-taking and task management workspace.">
+    <title>Bee Keeps — Premium Collaborative Workspace</title>
+    <link rel="stylesheet" href="styles.css">
+
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=Inter:wght@400;500;600&display=swap"
+        rel="stylesheet">
+
+    <!-- Phosphor Icons -->
+    <script src="https://unpkg.com/@phosphor-icons/web"></script>
+
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+    <script
+        src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns@3.0.0/dist/chartjs-adapter-date-fns.bundle.min.js"></script>
+
+    <!-- Socket.IO -->
+    <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
+
+    <!-- Quill.js Rich Text Editor -->
+    <link href="https://cdn.quilljs.com/1.3.6/quill.snow.css" rel="stylesheet">
+    <script src="https://cdn.quilljs.com/1.3.6/quill.js"></script>
+</head>
+
+<body>
+
+    <!-- ══════════ Splash Screen Overlay ══════════ -->
+    <div id="splash-screen">
+        <div class="splash-content" id="splash-content">
+            <i class="ph-fill ph-bee splash-icon"></i>
+            <span class="splash-title">Bee Keeps</span>
+        </div>
+        <!-- Floating honeycomb particles -->
+        <div class="splash-particles">
+            <div class="particle p1"></div>
+            <div class="particle p2"></div>
+            <div class="particle p3"></div>
+            <div class="particle p4"></div>
+            <div class="particle p5"></div>
+            <div class="particle p6"></div>
+        </div>
+    </div>
+
+    <div id="app">
+        <!-- ══════════ Authentication View ══════════ -->
+        <main id="auth-view" class="view active" style="opacity: 0;">
+            <div class="auth-container">
+                <!-- Left Brand Panel -->
+                <div class="auth-brand-panel">
+                    <div class="brand-panel-bg"></div>
+                    <div class="brand-panel-content">
+                        <i class="ph-fill ph-bee brand-panel-icon"></i>
+                        <h2>Bee Keeps</h2>
+                        <p>Organize your thoughts.<br>Collaborate in real-time.<br>Stay productive, effortlessly.</p>
+                        <div class="brand-features">
+                            <div class="brand-feature">
+                                <i class="ph ph-notebook"></i>
+                                <span>Rich Notes</span>
+                            </div>
+                            <div class="brand-feature">
+                                <i class="ph ph-check-square-offset"></i>
+                                <span>Smart Tasks</span>
+                            </div>
+                            <div class="brand-feature">
+                                <i class="ph ph-users"></i>
+                                <span>Real-time Collab</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Right Auth Panel -->
+                <div class="auth-panel-right">
+                    <!-- Mini brand in corner (splash animates into this) -->
+                    <div class="auth-mini-brand" id="auth-mini-brand">
+                        <i class="ph-fill ph-bee"></i>
+                        <span>Bee Keeps</span>
+                    </div>
+
+                    <div class="auth-card">
+                        <div class="auth-header">
+                            <h1 id="auth-form-title">Welcome back</h1>
+                            <p id="auth-form-subtitle">Sign in to continue to your workspace</p>
+                        </div>
+
+                        <form id="login-form" class="auth-form" novalidate>
+                            <div class="input-group">
+                                <i class="ph ph-envelope"></i>
+                                <input type="email" id="email" placeholder="Email Address" required>
+                            </div>
+                            <div class="input-group">
+                                <i class="ph ph-lock-key"></i>
+                                <input type="password" id="password" placeholder="Password" required>
+                            </div>
+                            <button type="submit" class="btn primary full-width">Sign In</button>
+                        </form>
+
+                        <form id="register-form" class="auth-form hidden" novalidate>
+                            <div class="input-group">
+                                <i class="ph ph-user"></i>
+                                <input type="text" id="reg-username" placeholder="Username" required>
+                            </div>
+                            <div class="input-group">
+                                <i class="ph ph-envelope"></i>
+                                <input type="email" id="reg-email" placeholder="Email Address" required>
+                            </div>
+                            <div class="input-group">
+                                <i class="ph ph-lock-key"></i>
+                                <input type="password" id="reg-password" placeholder="Password" required>
+                            </div>
+                            <button type="submit" class="btn primary full-width">Create Account</button>
+                        </form>
+
+                        <p class="auth-switch" id="auth-switch-text">Don't have an account? <a href="#"
+                                id="switch-to-register">Sign up</a></p>
+                    </div>
+                </div>
+            </div>
+        </main>
+
+        <!-- ══════════ Workspace View (Dashboard) ══════════ -->
+        <main id="workspace-view" class="view hidden">
+
+            <!-- ── Slide-out Navigation Menu ── -->
+            <div class="menu-overlay hidden" id="menu-overlay"></div>
+            <aside class="slide-menu glass-panel" id="slide-menu">
+                <div class="slide-menu-header">
+                    <div class="brand">
+                        <i class="ph-fill ph-bee"></i>
+                        <h2>Bee Keeps</h2>
+                    </div>
+                    <button class="icon-btn" id="close-menu-btn" title="Close menu">
+                        <i class="ph ph-x"></i>
+                    </button>
+                </div>
+                <nav class="sidebar-nav">
+                    <ul>
+                        <li class="nav-item active" data-target="dashboard">
+                            <i class="ph ph-squares-four"></i> Dashboard
+                        </li>
+                        <li class="nav-item" data-target="notes">
+                            <i class="ph ph-notebook"></i> All Notes
+                        </li>
+                        <li class="nav-item" data-target="tasks">
+                            <i class="ph ph-check-square-offset"></i> Tasks
+                        </li>
+                        <li class="nav-item" data-target="shared">
+                            <i class="ph ph-users"></i> Shared
+                        </li>
+                    </ul>
+                </nav>
+                <div class="user-profile">
+                    <div class="avatar" id="user-avatar">US</div>
+                    <div class="user-info">
+                        <span class="user-name" id="user-name-display">User</span>
+                        <button id="logout-btn" class="logout-link">Logout</button>
+                    </div>
+                </div>
+            </aside>
+
+            <!-- ── Slide-out Folders Panel ── -->
+            <div class="folder-overlay hidden" id="folder-overlay"></div>
+            <aside class="slide-folders glass-panel" id="slide-folders">
+                <div class="slide-menu-header">
+                    <h3 style="font-size:16px;">Folders</h3>
+                    <div style="display:flex; gap:8px;">
+                        <button class="icon-btn" id="new-folder-btn" title="New Folder"><i
+                                class="ph ph-plus"></i></button>
+                        <button class="icon-btn" id="close-folders-btn" title="Close"><i class="ph ph-x"></i></button>
+                    </div>
+                </div>
+                <ul class="folder-list" id="sidebar-folders">
+                    <!-- Folders dynamically populated -->
+                    <div class="skeleton-loader" style="height: 30px; border-radius: 8px;"></div>
+                    <div class="skeleton-loader" style="height: 30px; border-radius: 8px; margin-top: 8px; width: 80%;">
+                    </div>
+                </ul>
+            </aside>
+
+            <!-- ── Main Content Area ── -->
+            <section class="content-area">
+                <header class="topbar glass-panel">
+                    <div class="topbar-left">
+                        <button class="icon-btn" id="open-menu-btn" title="Menu">
+                            <i class="ph ph-dots-three-outline-vertical"></i>
+                        </button>
+                        <button class="icon-btn" id="open-folders-btn" title="Folders">
+                            <i class="ph ph-folder-simple"></i>
+                        </button>
+                        <div class="search-bar">
+                            <i class="ph ph-magnifying-glass"></i>
+                            <input type="text" placeholder="Search notes, tasks, and more...">
+                        </div>
+                    </div>
+                    <div class="topbar-actions">
+                        <button class="btn primary modern" id="new-note-btn">
+                            <i class="ph ph-plus"></i> New Note
+                        </button>
+                        <button class="icon-btn"><i class="ph ph-bell"></i></button>
+                    </div>
+                </header>
+
+                <div class="dashboard-content scrollable">
+                    <div class="welcome-banner glass-panel premium-gradient">
+                        <div>
+                            <h2 id="greeting-msg">Good Evening, User</h2>
+                            <p>Here's what's happening in your workspace today.</p>
+                        </div>
+                        <img src="https://illustrations.popsy.co/amber/creative-work.svg" alt="Workspace Illustration"
+                            class="banner-img">
+                    </div>
+
+                    <div class="grid-layout">
+                        <!-- Recent Notes -->
+                        <div class="dashboard-section glass-panel">
+                            <div class="section-header">
+                                <h3>Recent Notes</h3>
+                                <a href="#" class="view-all">View all</a>
+                            </div>
+                            <div class="notes-grid" id="recent-notes">
+                                <!-- Populated dynamically -->
+                                <div class="note-card-placeholder">Loading notes...</div>
+                            </div>
+                        </div>
+
+                        <!-- Today's Tasks -->
+                        <div class="dashboard-section glass-panel">
+                            <div class="section-header">
+                                <h3 id="tasks-section-title">My Tasks</h3>
+                                <button class="icon-btn" id="new-task-btn"><i class="ph ph-plus"></i></button>
+                            </div>
+                            <!-- Task Status Chart -->
+                            <div class="task-chart-container"
+                                style="position: relative; height: 220px; margin-bottom: 16px;">
+                                <canvas id="task-status-chart"></canvas>
+                            </div>
+                            <div class="task-list" id="dashboard-tasks">
+                                <!-- Populated dynamically -->
+                                <div class="task-item-placeholder">Loading tasks...</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </main>
+
+        <!-- Editor View (Hidden by default) -->
+        <main id="editor-view" class="view hidden">
+            <div class="editor-container glass-panel">
+                <header class="editor-header">
+                    <button class="icon-btn back-btn" id="close-editor"><i class="ph ph-arrow-left"></i></button>
+                    <input type="text" class="note-title-input" id="editor-title" placeholder="Untitled Note">
+                    <div class="editor-actions">
+                        <span class="sync-status" id="sync-status">Saved</span>
+                        <div class="collaborators" id="collaborators-list">
+                            <!-- Avatars built here -->
+                        </div>
+                        <button class="btn secondary" id="share-note-btn"><i class="ph ph-share-network"></i>
+                            Share</button>
+                        <button class="icon-btn" id="add-embed-btn" title="Add Google Doc/Sheet"><i
+                                class="ph ph-link"></i></button>
+                    </div>
+                </header>
+
+                <div class="editor-body">
+                    <!-- Custom rich text area -->
+                    <div id="editor-wrapper"
+                        style="flex: 1; display:flex; flex-direction:column; background: transparent; border: 1px solid var(--border-color); border-radius: var(--radius-sm); overflow: hidden;">
+                        <!-- Quill Toolbar will be prepended here automatically -->
+                        <div id="note-editor"
+                            style="flex: 1; min-height: 400px; color: var(--text-primary); font-family: var(--font-body); font-size: 16px;">
+                        </div>
+                    </div>
+
+                    <div class="embeds-container" id="embeds-container">
+                        <!-- iFrames to Google Docs go here -->
+                    </div>
+                </div>
+            </div>
+        </main>
+
+        <!-- Modal Overlays -->
+        <div class="modal hidden" id="task-modal">
+            <div class="modal-content glass-panel">
+                <h3>New Task</h3>
+                <div class="input-group">
+                    <input type="text" id="task-title" placeholder="Task description..." required>
+                </div>
+                <div class="input-group">
+                    <input type="text" id="task-category" placeholder="Category (e.g. Work)" value="General">
+                </div>
+                <div class="input-group">
+                    <select id="task-status"
+                        style="width: 100%; padding: 12px; background: rgba(0,0,0,0.2); border: 1px solid var(--border-color); border-radius: var(--radius-sm); color: var(--text-primary); font-family: var(--font-body); font-size: 14px;">
+                        <option value="pending">⏳ Pending</option>
+                        <option value="working">🔨 Working</option>
+                        <option value="completed">✅ Completed</option>
+                    </select>
+                </div>
+                <div class="flex-row">
+                    <div class="input-group">
+                        <input type="date" id="task-date">
+                    </div>
+                    <div class="input-group">
+                        <input type="time" id="task-time">
+                    </div>
+                </div>
+                <div class="modal-actions">
+                    <button class="btn secondary" id="cancel-task">Cancel</button>
+                    <button class="btn primary" id="save-task">Save Task</button>
+                </div>
+            </div>
+        </div>
+
+        <div class="modal hidden" id="share-modal">
+            <div class="modal-content glass-panel" style="max-width: 500px;">
+                <h3>Share Note</h3>
+                <div class="input-group" style="display: flex; gap: 10px;">
+                    <input type="email" id="share-email" placeholder="Enter user's email address..." required
+                        style="flex-grow: 1;">
+                    <select id="share-permission" class="btn secondary">
+                        <option value="read">Can View</option>
+                        <option value="write">Can Edit</option>
+                    </select>
+                </div>
+                <div class="modal-actions" style="margin-bottom: 20px;">
+                    <button class="btn primary" id="send-share-btn">Share</button>
+                    <button class="btn secondary" id="cancel-share-btn">Cancel</button>
+                </div>
+
+                <h4 style="margin-bottom: 10px;">Collaborators</h4>
+                <div id="collaborators-manage-list" style="max-height: 200px; overflow-y: auto;">
+                    <!-- List of current shared users -->
+                </div>
+            </div>
+        </div>
+
+        <div class="modal hidden" id="new-item-modal">
+            <div class="modal-content glass-panel">
+                <h3>Create New Item</h3>
+
+                <div class="flex-row" style="margin-bottom: 20px;">
+                    <button class="btn primary" id="type-note-btn" style="flex: 1;">📝 Document Note</button>
+                    <button class="btn secondary" id="type-link-btn" style="flex: 1;">🔗 Web Link</button>
+                </div>
+
+                <div class="input-group">
+                    <input type="text" id="new-item-title" placeholder="Item Title..." required>
+                </div>
+
+                <div class="input-group" id="new-link-wrap" style="display: none;">
+                    <input type="url" id="new-item-link" placeholder="https://example.com" required>
+                </div>
+
+                <div class="modal-actions">
+                    <button class="btn secondary" id="cancel-new-item">Cancel</button>
+                    <button class="btn primary" id="save-new-item">Create</button>
+                </div>
+            </div>
+        </div>
+
+        <div class="modal hidden" id="move-item-modal">
+            <div class="modal-content glass-panel">
+                <h3>Move Item</h3>
+
+                <div class="input-group">
+                    <select id="move-target-folder" class="btn secondary" style="width: 100%;">
+                        <option value="">Root Folder</option>
+                        <!-- Other folders injected dynamically -->
+                    </select>
+                </div>
+
+                <div class="modal-actions">
+                    <button class="btn secondary" id="cancel-move-item">Cancel</button>
+                    <button class="btn primary" id="confirm-move-item">Move</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="app.js"></script>
+    <script src="editor.js"></script>
+</body>
+
+</html>
