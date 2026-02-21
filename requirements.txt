@@ -1,0 +1,10 @@
+flask>=3.0
+flask-cors
+flask-socketio
+flask-bcrypt
+flask-sqlalchemy
+python-dotenv
+werkzeug
+gunicorn
+eventlet
+passlib

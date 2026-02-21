@@ -13,6 +13,8 @@ load_dotenv()
 # Path to frontend directory
 FRONTEND_DIR = os.path.join(os.path.abspath(os.path.dirname(__file__)), '..', 'frontend')
 
+socketio = SocketIO()
+
 def create_app():
     app = Flask(__name__, static_folder=None)
     
@@ -24,18 +26,17 @@ def create_app():
     app.config['SQLALCHEMY_DATABASE_URI'] = os.environ.get('DATABASE_URL', f'sqlite:///{db_path}')
     app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
-    # Session config for local development
-    # SameSite='Lax' works for same-origin requests (frontend served by Flask)
-    # Secure=False is required for http:// (not HTTPS)
+    # Session cookies — auto-detect production (RENDER env var set by Render)
+    is_production = os.environ.get('RENDER', False)
     app.config['SESSION_COOKIE_SAMESITE'] = 'Lax'
-    app.config['SESSION_COOKIE_SECURE'] = False
+    app.config['SESSION_COOKIE_SECURE'] = bool(is_production)
     app.config['SESSION_COOKIE_HTTPONLY'] = True
 
     # Initialize extensions
     CORS(app, supports_credentials=True)
     db.init_app(app)
     bcrypt = Bcrypt(app)
-    socketio = SocketIO(app, cors_allowed_origins="*")
+    socketio.init_app(app, cors_allowed_origins="*")
     
     # Register Blueprints
     from auth import auth_bp
@@ -59,10 +60,14 @@ def create_app():
         # Create all tables
         db.create_all()
         
-    return app, socketio
+    return app
+
+# Gunicorn entry: "app:create_app()"
+# This works because gunicorn calls create_app() which returns the Flask app
 
 if __name__ == '__main__':
-    app, socketio = create_app()
-    print(f"\n  → Open http://127.0.0.1:5000 in your browser\n")
-    socketio.run(app, debug=True, port=5000)
+    app = create_app()
+    port = int(os.environ.get('PORT', 5000))
+    print(f"\n  → Open http://127.0.0.1:{port} in your browser\n")
+    socketio.run(app, debug=True, port=port)
 
